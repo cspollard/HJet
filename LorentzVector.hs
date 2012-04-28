@@ -42,31 +42,34 @@ class (AdditiveGroup v) => LorentzVector v where
     eV = tV
 
     pt2V :: v -> Double
-    pt2V w = (sq (xV w)) + (sq (yV w))
+    pt2V w = sq (xV w) + sq (yV w)
 
     p2V :: v -> Double
-    p2V w = (pt2V w) + (sq (zV w))
+    p2V w = pt2V w + sq (pzV w)
 
     m2V :: v -> Double
-    m2V w = (sq (tV w)) - (p2V w)
+    m2V w = sq (tV w) - p2V w
 
     ptV :: v -> Double
-    ptV = sqrt' . pt2V
+    ptV = sqrt . pt2V
 
     pV :: v -> Double
-    pV = sqrt' . p2V
+    pV = sqrt . p2V
 
     mV :: v -> Double
-    mV = sqrt' . m2V
+    mV = sqrt . m2V
 
     etaV :: v -> Double
-    etaV w = acosh $ (pV w) / (ptV w)
+    etaV w = 0.5 * log ((p + z) / (p - z))
+        where
+            p = pV w
+            z = zV w
 
     thetaV :: v -> Double
-    thetaV w = atan $ (ptV w) / (pzV w)
+    thetaV w = atan2 (ptV w) (pzV w)
 
     phiV :: v -> Double
-    phiV w = atan $ (yV w) / (xV w)
+    phiV w = atan2 (yV w) (xV w)
 
 instance AdditiveGroup Vec4 where
     zeroV = Vec4 0.0 0.0 0.0 0.0
@@ -81,9 +84,9 @@ instance LorentzVector Vec4 where
 
 instance (AdditiveGroup v) => AdditiveGroup (BTree v) where
     zeroV = BNil
-    z ^+^ w = BNode (getData z ^+^ (getData w)) z w
+    z ^+^ w = BNode (getData z ^+^ getData w) z w
     negateV BNil = BNil
-    negateV (BNode w b c) = BNode (negateV w) (negateV b) (negateV c)
+    negateV (BNode w b c) = BNode (negateV w) BNil BNil
 
 instance (LorentzVector v) => LorentzVector (BTree v) where
     xV (BNode w _ _) = xV w

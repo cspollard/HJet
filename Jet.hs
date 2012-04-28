@@ -32,10 +32,3 @@ clusterJets r p cls jets
 
 ptSort :: (LorentzVector a) => [a] -> [a]
 ptSort = reverse . (sortBy (comparing ptV))
-
-testClusters = [BNode (Vec4 1 3 2 5) BNil BNil,
-                BNode (Vec4 1 4 2 5) BNil BNil,
-                BNode (Vec4 1 4 2 8) BNil BNil,
-                BNode (Vec4 1 4 2 9) BNil BNil,
-                BNode (Vec4 10 4 2 9) BNil BNil,
-                BNode (Vec4 0 4 2 9) BNil BNil]

@@ -23,11 +23,11 @@ parseEventData :: [BTree Cluster] -> IO ()
 parseEventData cls = do
     l <- getLine
     if l == "</event>"
-        then writeJets (aktJets 0.4 cls) >> readDataFromRoot
+        then putStrLn "Done reading in jets." >> writeJets (aktJets 0.4 cls) >> readDataFromRoot
         else parseEventData $ lineToCluster l : cls
 
 lineToCluster :: String -> BTree Cluster
 lineToCluster l = BNode (fromPtEtaPhiE (read l)) BNil BNil
 
 writeJets :: [BTree Cluster] -> IO ()
-writeJets jets = mapM_ (putStrLn . show . toPtEtaPhiE . getData) jets
+writeJets jets = mapM_ (putStrLn . show . toPtEtaPhiE . getData) jets >> mapM_ (putStrLn . show . toXYZT . getData) jets >> mapM_ (putStrLn . show . m2V . getData) jets
