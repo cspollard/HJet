@@ -95,12 +95,18 @@ dRV :: (LorentzVector a) => a -> a -> Double
 dRV v w = sqrt(sq (etaV z) + sq (phiV z))
     where z = v ^-^ w
 
-fromXYZT :: Double -> Double -> Double -> Double -> Vec4
-fromXYZT x y z t = Vec4 x y z t
+fromXYZT :: (Double, Double, Double, Double) -> Vec4
+fromXYZT (x,y,z,t) = Vec4 x y z t
 
-fromPtEtaPhiE :: Double -> Double -> Double -> Double -> Vec4
-fromPtEtaPhiE pt eta phi e = Vec4 px py pz e
+fromPtEtaPhiE :: (Double, Double, Double, Double) -> Vec4
+fromPtEtaPhiE (pt,eta,phi,e) = Vec4 px py pz e
     where
         px = pt * (cos phi)
         py = pt * (sin phi)
         pz = pt * (sinh eta)
+
+toPtEtaPhiE :: Vec4 -> (Double, Double, Double, Double)
+toPtEtaPhiE v = (ptV v, etaV v, phiV v, eV v)
+
+toXYZT :: Vec4 -> (Double, Double, Double, Double)
+toXYZT (Vec4 x y z t) = (x,y,z,t)

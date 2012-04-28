@@ -5,6 +5,7 @@ data State = BeginData | BeginEvent | EndEvent | EndData
 
 main = readDataFromRoot
 
+readDataFromRoot :: IO ()
 readDataFromRoot = do
     l <- getLine
     case parseControl l of
@@ -12,17 +13,21 @@ readDataFromRoot = do
         EndData -> return ()
         otherwise -> readDataFromRoot
 
+parseControl :: String -> State
 parseControl l
     | l == "<event>" = BeginEvent
     | l == "</event>" = EndEvent
     | otherwise = EndData
 
+parseEventData :: [BTree Cluster] -> IO ()
 parseEventData cls = do
     l <- getLine
     if l == "</event>"
         then writeJets (aktJets 0.4 cls) >> readDataFromRoot
         else parseEventData $ lineToCluster l : cls
 
-lineToCluster l = BNode (read ("Vec4 " ++ l)) BNil BNil
+lineToCluster :: String -> BTree Cluster
+lineToCluster l = BNode (fromPtEtaPhiE (read l)) BNil BNil
 
-writeJets jets = mapM_ (putStrLn . show . getData) jets
+writeJets :: [BTree Cluster] -> IO ()
+writeJets jets = mapM_ (putStrLn . show . toPtEtaPhiE . getData) jets
