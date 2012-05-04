@@ -69,7 +69,10 @@ clusterJets :: (LorentzVector a) => (a -> a -> Double) -> [a] -> (ClusterGraph a
 clusterJets dist jets gr
     | isEmpty gr = jets
     | otherwise = if (minI == minJ)
-        then clusterJets dist ((getNodeLabel gr minI):jets) $ delNode minI gr
+        then let j = getNodeLabel gr minJ in
+            if (ptV j > minPt)
+                then clusterJets dist ((getNodeLabel gr minI):jets) $ delNode minI gr
+                else clusterJets dist jets $ delNode minI gr
         else clusterJets dist jets $ combineClusters dist gr minE
         where minE@(minI, minJ, _) = minDij dist gr
 
@@ -77,9 +80,7 @@ clusterJets dist jets gr
 ptSort :: (LorentzVector a) => [a] -> [a]
 ptSort = reverse . (sortBy (comparing ptV))
 
-testGraph = (labNodes gr, labEdges gr)
-    where gr = makeClusterGraph (dij 0.4 (-1)) $ map fromPtEtaPhiE [(50, 2, 2, 60), (40, 2.5, 2.5, 45)]
-
-
 aktJets r cls = clusterJets dist [] $ makeClusterGraph dist cls
     where dist = dij r (-1)
+
+minPt = 7000

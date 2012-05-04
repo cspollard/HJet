@@ -19,15 +19,19 @@ parseControl l
     | l == "</event>" = EndEvent
     | otherwise = EndData
 
-parseEventData :: [BTree Cluster] -> IO ()
+-- parseEventData :: [BTree Cluster] -> IO ()
+parseEventData :: [Vec4] -> IO ()
 parseEventData cls = do
     l <- getLine
     if l == "</event>"
-        then putStrLn "Done reading in jets." >> writeJets cls {-(aktJets 0.4 cls)-} >> readDataFromRoot
+        then putStrLn "Done reading in jets." >> writeJets (aktJets 0.4 cls) >> readDataFromRoot
         else parseEventData $ lineToCluster l : cls
 
-lineToCluster :: String -> BTree Cluster
-lineToCluster l = BNode (fromPtEtaPhiE (read l)) BNil BNil
+-- lineToCluster :: String -> BTree Cluster
+-- lineToCluster l = BNode (fromPtEtaPhiE (read l)) BNil BNil
+lineToCluster :: String -> Vec4
+lineToCluster l = fromPtEtaPhiE (read l)
 
-writeJets :: [BTree Cluster] -> IO ()
-writeJets jets = mapM_ (putStrLn . show . toPtEtaPhiE . getData) jets >> (putStrLn (show (mindij 0.4 (-1) jets)))
+-- writeJets :: [BTree Cluster] -> IO ()
+writeJets :: [Vec4] -> IO ()
+writeJets jets = mapM_ (putStrLn . show . toPtEtaPhiE) $ ptSort jets
