@@ -23,7 +23,7 @@ sqrt' :: (Ord a, Floating a) => a -> a
 sqrt' x = if x >= 0.0 then sqrt x else (-sqrt (-x))
 
 -- minimum definition: xV, yV, zV, tV
-class (AdditiveGroup v) => LorentzVector v where
+class (Eq v, AdditiveGroup v) => LorentzVector v where
     xV :: v -> Double
     yV :: v -> Double
     zV :: v -> Double
@@ -71,6 +71,13 @@ class (AdditiveGroup v) => LorentzVector v where
     phiV :: v -> Double
     phiV w = atan2 (yV w) (xV w)
 
+    dRV :: v -> v -> Double
+    dRV x w = sqrt(sq deta + sq dphi)
+        where
+            deta = etaV x - etaV w
+            dphi = phiV x - phiV w
+
+
 instance AdditiveGroup Vec4 where
     zeroV = Vec4 0.0 0.0 0.0 0.0
     (Vec4 x1 y1 z1 t1) ^+^ (Vec4 x2 y2 z2 t2) = Vec4 (x1+x2) (y1+y2) (z1+z2) (t1+t2)
@@ -94,9 +101,6 @@ instance (LorentzVector v) => LorentzVector (BTree v) where
     zV (BNode w _ _) = zV w
     tV (BNode w _ _) = tV w
 
-dRV :: (LorentzVector a) => a -> a -> Double
-dRV v w = sqrt(sq (etaV z) + sq (phiV z))
-    where z = v ^-^ w
 
 fromXYZT :: (Double, Double, Double, Double) -> Vec4
 fromXYZT (x,y,z,t) = Vec4 x y z t
