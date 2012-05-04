@@ -11,10 +11,10 @@ aktJets :: Double -> ([BTree Cluster] -> [BTree Cluster])
 aktJets r = ptSort . (flip (clusterJets r (-1)) [])
 
 ktJets :: Double -> ([BTree Cluster] -> [BTree Cluster])
-ktJets r = ptSort . (flip (clusterJets r (1)) [])
+ktJets r = ptSort . (flip (clusterJets r 1) [])
 
 caJets :: Double -> ([BTree Cluster] -> [BTree Cluster])
-caJets r = ptSort . (flip (clusterJets r (0)) [])
+caJets r = ptSort . (flip (clusterJets r 0) [])
 
 dij :: (LorentzVector a, Eq a) => Double -> Int -> a -> a -> Double
 dij r p v w = min ((ptV v)^^(2*p)) ((ptV w)^^(2*p)) * (d^2)

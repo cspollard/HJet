@@ -57,7 +57,7 @@ class (AdditiveGroup v) => LorentzVector v where
     pV = sqrt . p2V
 
     mV :: v -> Double
-    mV = sqrt . m2V
+    mV = sqrt' . m2V
 
     etaV :: v -> Double
     etaV w = 0.5 * log ((p + z) / (p - z))
