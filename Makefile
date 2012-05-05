@@ -1,4 +1,4 @@
-CXX=clang
+CXX=g++
 
 all: run Main
 
@@ -15,4 +15,4 @@ TI.o: TI.C
 	$(CXX) TI.C -c -o TI.o `root-config --cflags`
 
 Main: Main.hs Jet.hs LorentzVector.hs
-	ghc --make -O2 Main.hs
+	ghc --make -O2 Main.hs -rtsopts -prof -auto-all -caf-all -fforce-recomp
