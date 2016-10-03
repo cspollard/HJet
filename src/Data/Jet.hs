@@ -22,30 +22,44 @@ hasInt i (_, (i', j')) | i == i' || i == j' = True
 
 data Tree a = Branch (Tree a) a (Tree a)
             | Leaf a
+            deriving Show
+
+data Clustering a =
+    Clustering { dij :: XYZT -> XYZT -> a
+               , diB :: XYZT -> a
+               }
 
 obj :: Tree a -> a
 obj (Branch _ x _) = x
 obj (Leaf x) = x
 
-cluster :: (Num a, Ord a) => (XYZT -> XYZT -> a) -> [XYZT] -> [Tree (a, XYZT)]
-cluster d pjs = let ts = IM.fromList . zip [0..] $ fmap (Leaf . (0,)) pjs
-                in  next ts $ mkPairs ts
+cluster :: (Num a, Ord a, Show a) => Clustering a -> [XYZT] -> [Tree (a, XYZT)]
+cluster (Clustering d d0) pjs =
+    let ts = IM.fromList . zip [0..] $ fmap (Leaf . (0,)) pjs
+    in  next ts $ mkPairs ts
+
     where
         mkPair ts i j = let f = snd . obj . (ts !)
                         in  (d (f i) (f j), (i, j))
 
         mkPairs ts = let is = IM.keys ts
-                     in  sort [mkPair ts i j | i <- is, j <- is]
+                     in  sort $ [mkPair ts i j |  i <- is, j <- is, i < j] ++ fmap (mkBeam ts) is
 
-        -- next :: (Num a, Ord a)
-             -- => IntMap (Tree (a, XYZT)) -> [PJPair a] -> [Tree (a, XYZT)]
+        mkBeam ts i = (d0 (snd . obj $ ts ! i), (i, -1))
+
         next ts [] = toListOf traverse ts
         next ts ((x, (i, j)):ds) =
-            let tl = ts ! i
-                tr = ts ! j
-                pj = snd (obj tl) <> snd (obj tr)
-                b = Branch tl (x, pj) tr
-                ds' = filter (not . ((||) <$> hasInt i <*> hasInt j)) ds
-                ts' = sans i $ sans j ts
-                ts'' = IM.insert i b ts'
-            in  next ts'' . foldr (insert . mkPair ts'' i) ds' $ IM.keys ts'
+            if j < 0
+                -- if we're merging with the beam
+                then
+                    -- remove all trace of i from the distance list
+                    next ts (filter (not . hasInt i) ds)
+                else
+                    let tl = ts ! i
+                        tr = ts ! j
+                        pj = snd (obj tl) <> snd (obj tr)
+                        b = Branch tl (x, pj) tr
+                        ds' = filter (not . ((||) <$> hasInt i <*> hasInt j)) ds
+                        ts' = sans i $ sans j ts
+                        ts'' = IM.insert i b ts'
+                    in  seq ts' . next ts'' . (mkBeam ts'' i :) . foldr (insert . mkPair ts'' i) ds' $ IM.keys ts'
