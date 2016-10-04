@@ -2,6 +2,8 @@
 
 module Data.Jet where
 
+import Debug.Trace
+
 import Control.Lens
 
 import Data.List (insert, sort)
@@ -53,7 +55,7 @@ cluster (Clustering d d0) pjs =
                 -- if we're merging with the beam
                 then
                     -- remove all trace of i from the distance list
-                    next ts (filter (not . hasInt i) ds)
+                    traceShow "mergeIB" $ next ts (filter (not . hasInt i) ds)
                 else
                     let tl = ts ! i
                         tr = ts ! j
@@ -61,5 +63,21 @@ cluster (Clustering d d0) pjs =
                         b = Branch tl (x, pj) tr
                         ds' = filter (not . ((||) <$> hasInt i <*> hasInt j)) ds
                         ts' = sans i $ sans j ts
-                        ts'' = IM.insert i b ts'
-                    in  seq ts' . next ts'' . (mkBeam ts'' i :) . foldr (insert . mkPair ts'' i) ds' $ IM.keys ts'
+                        ts'' = traceShow "mergeIJ" $ IM.insert i b ts'
+                    in  seq ts' . next ts'' . insert (mkBeam ts'' i) . foldr (insert . mkPair ts'' i) ds' $ IM.keys ts'
+
+
+ktLike :: Int -> Double -> Clustering Double
+ktLike p r0 = Clustering d d0
+    where
+        d pj pj' = min (view lvPt pj ^^ (2*p)) (view lvPt pj' ^^ (2*p)) * lvDR pj pj' / r0
+        d0 pj = view lvPt pj ^^ (2*p)
+
+kt :: Double -> Clustering Double
+kt = ktLike 1
+
+camKt :: Double -> Clustering Double
+camKt = ktLike 0
+
+akt :: Double -> Clustering Double
+akt = ktLike (-1)
