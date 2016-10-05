@@ -27,11 +27,13 @@ data Clustering a =
                , diB :: XYZT -> a
                }
 
+-- TODO
+-- redo with Vector I think?
 cluster :: (Num a, Ord a, HasLorentzVector b, Semigroup b)
         => Clustering a -> [b] -> [Tree (a, b)]
 cluster (Clustering d d0) pjs =
     let ts = IM.fromList . zip [0..] $ fmap leaf pjs
-    in  next ts $ mkPairs ts
+    in  next ts (mkPairs ts) []
 
     where
         leaf pj = Node (0, pj) []
@@ -47,13 +49,13 @@ cluster (Clustering d d0) pjs =
         mkPairs ts = let is = IM.keys ts
                      in  sort $ [mkPair ts i j |  i <- is, j <- is, i < j] ++ [mkPair ts i i | i <- is]
 
-        next ts [] = toListOf traverse ts
-        next ts ((x, (i, j)):ds) =
+        next _ [] jets = jets
+        next ts ((x, (i, j)):ds) jets =
             if i == j
                 -- if we're merging with the beam
                 then
                     -- remove all trace of i from the distance list
-                    next ts (filter (not . hasInt i) ds)
+                    next (sans i ts) (filter (not . hasInt i) ds) (ts ! i : jets)
                 else
                     let tl = ts ! i
                         tr = ts ! j
@@ -61,7 +63,8 @@ cluster (Clustering d d0) pjs =
                         b = Node (x, pj) [tl, tr]
                         ds' = filter (not . ((||) <$> hasInt i <*> hasInt j)) ds
                         ts' = IM.insert i b $ sans j ts
-                    in  seq ts' . next ts' . foldr (insert . mkPair ts' i) ds' $ IM.keys ts'
+                        ds'' = foldr (insert . mkPair ts' i) ds' (IM.keys ts')
+                    in  seq ts' $ next ts' ds'' jets
 
 
 ktLike :: Int -> Double -> Clustering Double

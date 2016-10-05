@@ -36,13 +36,8 @@ parseConstit s =
 main :: IO ()
 main = do
     pjs <- map MyPJ . zip (map Just [0..]) . map parseConstit <$> many getLine
-    mapM_ (\j -> do
-                    print . view toPtEtaPhiE . snd . rootLabel $ j
-                    -- putStrLn . drawTree . fmap show $ j
-                    traverseOf_ (traverse . _2 . unPJ . _1 . _Just) print j
-                    putStrLn ""
-          )
-
-        -- . sortOn (Down . view lvPt)
-        -- . map (view toPtEtaPhiE . snd . obj)
+    mapM_ print
+        -- traverseOf_ (traverse . _2 . unPJ . _1 . _Just) print j
+        . sortOn (Down . view lvPt)
+        . map (view toPtEtaPhiE . snd . rootLabel)
         $ cluster (akt 0.6) pjs
