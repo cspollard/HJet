@@ -70,7 +70,7 @@ cluster (Clustering d d0) pjs =
 ktLike :: Int -> Double -> Clustering Double
 ktLike p r0 = Clustering d d0
     where
-        d pj pj' = min (view lvPt pj ^^ (2*p)) (view lvPt pj' ^^ (2*p)) * lvDR pj pj' / r0
+        d pj pj' = min (view lvPt pj ^^ (2*p)) (view lvPt pj' ^^ (2*p)) * lvDRRap pj pj' / r0
         d0 pj = view lvPt pj ^^ (2*p)
 
 kt :: Double -> Clustering Double
