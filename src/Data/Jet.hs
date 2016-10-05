@@ -2,16 +2,16 @@
 
 module Data.Jet where
 
-import Debug.Trace
-
 import Control.Lens
 
 import Data.List (insert, sort)
-import Data.Function (on)
-import Data.Semigroup ((<>))
+import Data.Semigroup (Semigroup(..))
 
-import Data.IntMap.Strict (IntMap, (!))
+import Data.IntMap.Strict ((!))
 import qualified Data.IntMap.Strict as IM
+
+import Data.Tree (Tree(..))
+
 import Data.HEP.LorentzVector
 
 
@@ -22,49 +22,46 @@ hasInt i (_, (i', j')) | i == i' || i == j' = True
                        | otherwise          = False
 
 
-data Tree a = Branch (Tree a) a (Tree a)
-            | Leaf a
-            deriving Show
-
 data Clustering a =
     Clustering { dij :: XYZT -> XYZT -> a
                , diB :: XYZT -> a
                }
 
-obj :: Tree a -> a
-obj (Branch _ x _) = x
-obj (Leaf x) = x
-
-cluster :: (Num a, Ord a, Show a) => Clustering a -> [XYZT] -> [Tree (a, XYZT)]
+cluster :: (Num a, Ord a, HasLorentzVector b, Semigroup b)
+        => Clustering a -> [b] -> [Tree (a, b)]
 cluster (Clustering d d0) pjs =
-    let ts = IM.fromList . zip [0..] $ fmap (Leaf . (0,)) pjs
+    let ts = IM.fromList . zip [0..] $ fmap leaf pjs
     in  next ts $ mkPairs ts
 
     where
-        mkPair ts i j = let f = snd . obj . (ts !)
-                        in  (d (f i) (f j), (i, j))
+        leaf pj = Node (0, pj) []
+
+        mkPair ts i j | i == j =
+            let pj = view toXYZT . snd . rootLabel $ ts ! i
+            in  (d0 pj, (i, i))
+
+                      | otherwise =
+            let f = view toXYZT . snd . rootLabel . (ts !)
+            in  (d (f i) (f j), (i, j))
 
         mkPairs ts = let is = IM.keys ts
-                     in  sort $ [mkPair ts i j |  i <- is, j <- is, i < j] ++ fmap (mkBeam ts) is
-
-        mkBeam ts i = (d0 (snd . obj $ ts ! i), (i, -1))
+                     in  sort $ [mkPair ts i j |  i <- is, j <- is, i < j] ++ [mkPair ts i i | i <- is]
 
         next ts [] = toListOf traverse ts
         next ts ((x, (i, j)):ds) =
-            if j < 0
+            if i == j
                 -- if we're merging with the beam
                 then
                     -- remove all trace of i from the distance list
-                    traceShow "mergeIB" $ next ts (filter (not . hasInt i) ds)
+                    next ts (filter (not . hasInt i) ds)
                 else
                     let tl = ts ! i
                         tr = ts ! j
-                        pj = snd (obj tl) <> snd (obj tr)
-                        b = Branch tl (x, pj) tr
+                        pj = snd (rootLabel tl) <> snd (rootLabel tr)
+                        b = Node (x, pj) [tl, tr]
                         ds' = filter (not . ((||) <$> hasInt i <*> hasInt j)) ds
-                        ts' = sans i $ sans j ts
-                        ts'' = traceShow "mergeIJ" $ IM.insert i b ts'
-                    in  seq ts' . next ts'' . insert (mkBeam ts'' i) . foldr (insert . mkPair ts'' i) ds' $ IM.keys ts'
+                        ts' = IM.insert i b $ sans j ts
+                    in  seq ts' . next ts' . foldr (insert . mkPair ts' i) ds' $ IM.keys ts'
 
 
 ktLike :: Int -> Double -> Clustering Double
